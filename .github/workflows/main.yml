@@ -1,0 +1,49 @@
+name: Gerar AAB do NutriScan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ principal ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Preparar projeto
+        run: |
+          unzip -o NutriScan_GitHub_AAB.zip
+          cd NutriScan_v1
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar SDK
+        run: |
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Instalar Gradle
+        run: |
+          curl -L -o /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.11.1-bin.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-8.11.1/bin" >> "$GITHUB_PATH"
+
+      - name: Gerar AAB
+        run: |
+          cd NutriScan_v1
+          gradle bundleRelease --no-daemon
+
+      - name: Disponibilizar AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: NutriScan-AAB
+          path: NutriScan_v1/app/build/outputs/bundle/release/*.aab
